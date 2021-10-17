@@ -12,3 +12,7 @@ Batch sandbox to simulate a file system using environment variables.
 
 `sandbox <command line>`  
 You can run any command from there and it'll make a simulated file system on the directory `fs`.
+
+## User and computer name spoofing
+
+Batch sandbox allows you to spoof your username and your computer name by changing this [line](https://github.com/anic17/Sandbox/blob/main/SandBox.bat#L14) to either 0 or 1. A random username and computer name will be created which will hide your computer's real information.
