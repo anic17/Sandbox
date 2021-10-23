@@ -17,7 +17,6 @@ set fake_username=1
 
 set "__old_username=%username%"
 set "__old_temp=%temp%"
-
 :: Create a fake user and computer name
 set /a random_name_number=(%random%%%(999999-100000+1))+100000
 
@@ -34,6 +33,7 @@ set "user_prof=!userprofile::=!"
 set "user_prof=!user_prof:%__old_username%=%username%!"
 set "__old_username="
 
+md "fs\temp" > nul 2>&1
 md "fs\c\Program Files\Common Files\system" > nul 2>&1
 md "fs\c\Program Files (x86)\Common Files\system" > nul 2>&1
 md "fs\c\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp" > nul 2>&1
@@ -47,10 +47,17 @@ md "fs\c\Windows\System32\drivers\driverdata" > nul 2>&1
 md "fs\c\Users\Public" > nul 2>&1
 
 md "fs\!user_prof!" > nul 2>&1
-	
+
 for %%A in (Desktop Downloads Documents Pictures Videos Favorites Links Music AppData\Local\Temp 
 "Appdata\Roaming\Microsoft\Windows\Start Menu\Programs\Startup"
 ) do md "fs\!user_prof!\%%~A" > nul 2>&1
+
+
+:: Change the path variable to a fake one
+for %%A in (a b c d e f g h i j k l m n o p q r s t u v w x y z) do (
+	set "path=!path:%%A:=%~dp0fs\%%A!"
+)
+
 
 
 for %%A in (
@@ -82,20 +89,34 @@ for /f "usebackq delims=" %%A in ("%__old_temp%\sandbox.%random_name_number%.tmp
 )
 set __temp=
 del "%__old_temp%\sandbox.%random_name_number%.tmp" /q > nul 2>&1
+
 set "__old_temp="
 
+echo.[Saving old tree files] 1>&2
+dir /s /b "%~dp0fs" > "%~dp0fs\temp\index1"
+
+
 echo.[Sandboxing "%~f1"] 1>&2
-if "%fake_computername%"=="1" echo.[Using fake computer name !computername!]
-if "%fake_username%"=="1" echo.[Using fake user name !username!]
+if "%fake_computername%"=="1" echo.[Using fake computer name !computername!] 1>&2
+if "%fake_username%"=="1" echo.[Using fake user name !username!] 1>&2
 
 echo.
 
-rem Need to have this in an isolated space
+:: Need to have this in an isolated space
 setlocal DisableDelayedExpansion
+
 pushd "%~dp1"
 %*
 popd
-endlocal | echo.[Process exited with error code %errorlevel%]
+echo.[Process exited with error code %errorlevel%] 1>&2
+echo.[Saving new tree files] 1>&2
+dir /s /b "%~dp0fs" > "%~dp0fs\temp\index2"
+fc "%~dp0fs\temp\index1" "%~dp0fs\temp\index2" > nul 2>&1 && (
+	echo.[No file system activity detected]
+) || (
+	echo.[File system modification detected]
+)
+endlocal 
 
 endlocal
 exit /b %errorlevel%
@@ -116,6 +137,7 @@ echo.Will sandbox and run the file script.bat
 echo.
 echo.Sandbox works by changing every path environment variable to a fake
 echo.file system located on the directory 'fs' where the sandbox is being runned
+echo.Doesn't work will full paths yet.
 echo.
 echo.Copyright ^(c^) 2021 anic17 Software
 exit /b 0
